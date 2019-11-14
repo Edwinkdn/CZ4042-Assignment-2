@@ -1,7 +1,8 @@
 #
 # Project 2, starter code Part a
-#
-
+# #
+# from google.colab import drive
+# drive.mount('/content/gdrive')
 import math
 from functools import reduce
 
@@ -9,6 +10,8 @@ import tensorflow as tf
 import numpy as np
 import pylab as plt
 import pickle
+import time
+import datetime
 
 
 
@@ -26,7 +29,7 @@ tf.set_random_seed(seed)
 config = tf.ConfigProto()
 config.gpu_options.allow_growth = True
 def load_data(file):
-    with open(file), 'rb' as fo:
+    with open(file, 'rb') as fo:
         try:
             samples = pickle.load(fo)
         except UnicodeDecodeError:  #python 3.x
@@ -86,13 +89,14 @@ def cnn(images):
 
 def main():
 
-    trainX, trainY = load_data('data_batch_1')
+    trainX, trainY = load_data('/content/gdrive/My Drive/cz4042/data_batch_1')
     print(trainX.shape, trainY.shape)
 
-    testX, testY = load_data('test_batch_trim')
-    print(testX.shape, testY.shape)
+    testX_raw, testY = load_data('/content/gdrive/My Drive/cz4042/test_batch_trim')
+    print(testX_raw.shape, testY.shape)
 
     trainX = (trainX - np.min(trainX, axis = 0))/np.max(trainX, axis = 0)
+    testX = (testX_raw - np.min(testX_raw, axis = 0))/np.max(testX_raw, axis = 0)
 
     # Create the model
     x = tf.placeholder(tf.float32, [None, IMG_SIZE*IMG_SIZE*NUM_CHANNELS])
@@ -111,6 +115,7 @@ def main():
 
     N = len(trainX)
     idx = np.arange(N)
+    timer = time.time()
     with tf.Session() as sess:
         sess.run(tf.global_variables_initializer())
         test_acc = []
@@ -121,33 +126,38 @@ def main():
             trainX, trainY = trainX[idx], trainY[idx]
             for start, end in zip(range(0,N, batch_size), range(batch_size, N, batch_size)):
                 _, loss_ = sess.run([train_step, loss], feed_dict={x: trainX[start:end], y_: trainY[start:end]})
-                acc_train_loss.append(loss_)
-            train_loss.append(reduce(lambda x, y: x + y, acc_train_loss) / len(acc_train_loss))
+            train_loss.append(loss_)
             test_acc.append(accuracy.eval(feed_dict={x: testX, y_: testY}))
             print('epoch', e, 'entropy', loss_)
-
+        elapsed_time = (time.time() - timer)
+        elapsed_time_str = 'Elapsed time: ' + str(datetime.timedelta(seconds=elapsed_time)).split(".")[0]
         plt.figure(1)
         plt.plot(np.arange(epochs), test_acc, label='gradient descent')
+        subtitle_str = elapsed_time_str + '   Max Test Accuracy: ' + str(max(test_acc))
+        plt.title(subtitle_str, fontsize=9)
         plt.xlabel('epochs')
         plt.ylabel('test accuracy')
         plt.legend(loc='lower right')
-        plt.savefig('./figures/Test_Accuracy_Graph_2500.png')
+        plt.savefig('/content/gdrive/My Drive/cz4042/figures/Test_Accuracy_Graph_2500.png')
 
         plt.figure(2)
         plt.plot(np.arange(epochs), train_loss, label='gradient descent')
+        subtitle_str = elapsed_time_str + '   Min Train Cost: ' + str(min(train_loss))
+        plt.title(subtitle_str, fontsize=9)
         plt.xlabel('epochs')
-        plt.ylabel('cost')
-        plt.legend(loc='lower right')
-        plt.savefig('./figures/Cost_Graph_2500.png')
+        plt.ylabel('Train cost')
+        plt.legend(loc='upper right')
+        plt.savefig('/content/gdrive/My Drive/cz4042/figures/Cost_Graph_2500.png')
 
         index = np.random.randint(low=0, high=1999)
         X1 = testX[index,:]
+        X1_raw =testX_raw[index,:]
         index = np.random.randint(low=0, high=1999)
         X2 = testX[index, :]
-
+        X2_raw =testX_raw[index,:]
         plt.figure(3)
-        plt.axis('off'); plt.imshow(X1.reshape(32,32,3).astype('uint32'))
-        plt.savefig('./figures/T1_original_image.png')
+        plt.axis('off'); plt.imshow(X1.reshape(3,32,32).transpose(1,2,0))
+        plt.savefig('/content/gdrive/My Drive/cz4042/figures/T1_original_image.png')
 
         conv_1_, pool_1_, conv_2_, pool_2_ = sess.run([conv_1, pool_1, conv_2, pool_2],
                                                   {x: X1.reshape(1,3072)})
@@ -155,29 +165,29 @@ def main():
         h_conv_1 = np.array(conv_1_)
         for i in range(50):
             plt.subplot(10, 5, i+1); plt.axis('off'); plt.imshow(h_conv_1[0,:,:,i])
-        plt.savefig('./figures/T1_convo1_feature_maps.png')
+        plt.savefig('/content/gdrive/My Drive/cz4042/figures/T1_convo1_feature_maps.png')
 
         plt.figure(5)
         h_pool_1 = np.array(pool_1_)
         for i in range(50):
             plt.subplot(10, 5, i + 1); plt.axis('off'); plt.imshow(h_pool_1[0, :, :, i])
-        plt.savefig('./figures/T1_pool1_feature_maps.png')
+        plt.savefig('/content/gdrive/My Drive/cz4042/figures/T1_pool1_feature_maps.png')
 
         plt.figure(6)
         h_conv_2 = np.array(conv_2_)
         for i in range(50):
             plt.subplot(10, 5, i + 1); plt.axis('off'); plt.imshow(h_conv_2[0, :, :, i])
-        plt.savefig('./figures/T1_convo2_feature_maps.png')
+        plt.savefig('/content/gdrive/My Drive/cz4042/figures/T1_convo2_feature_maps.png')
 
         plt.figure(7)
         h_pool_2 = np.array(pool_2_)
         for i in range(50):
             plt.subplot(10, 5, i + 1); plt.axis('off'); plt.imshow(h_pool_2[0, :, :, i])
-        plt.savefig('./figures/T1_pool2_feature_maps.png')
+        plt.savefig('/content/gdrive/My Drive/cz4042/figures/T1_pool2_feature_maps.png')
 
         plt.figure(8)
-        plt.axis('off'); plt.imshow(X2.reshape(32,32,3).astype('uint32'))
-        plt.savefig('./figures/T2_original_image.png')
+        plt.axis('off'); plt.imshow(X2.reshape(3,32,32).transpose(1,2,0))
+        plt.savefig('/content/gdrive/My Drive/cz4042/figures/T2_original_image.png')
 
         conv_1_, pool_1_, conv_2_, pool_2_ = sess.run([conv_1, pool_1, conv_2, pool_2],
                                                   {x: X2.reshape(1,3072)})
@@ -185,25 +195,25 @@ def main():
         h_conv_1 = np.array(conv_1_)
         for i in range(50):
             plt.subplot(10, 5, i+1); plt.axis('off'); plt.imshow(h_conv_1[0,:,:,i])
-        plt.savefig('./figures/T2_convo1_feature_maps.png')
+        plt.savefig('/content/gdrive/My Drive/cz4042/figures/T2_convo1_feature_maps.png')
 
         plt.figure(10)
         h_pool_1 = np.array(pool_1_)
         for i in range(50):
             plt.subplot(10, 5, i + 1); plt.axis('off'); plt.imshow(h_pool_1[0, :, :, i])
-        plt.savefig('./figures/T2_pool1_feature_maps.png')
+        plt.savefig('/content/gdrive/My Drive/cz4042/figures/T2_pool1_feature_maps.png')
 
         plt.figure(11)
         h_conv_2 = np.array(conv_2_)
         for i in range(50):
             plt.subplot(10, 5, i + 1); plt.axis('off'); plt.imshow(h_conv_2[0, :, :, i])
-        plt.savefig('./figures/T2_convo2_feature_maps.png')
+        plt.savefig('/content/gdrive/My Drive/cz4042/figures/T2_convo2_feature_maps.png')
 
         plt.figure(12)
         h_pool_2 = np.array(pool_2_)
         for i in range(50):
             plt.subplot(10, 5, i + 1); plt.axis('off'); plt.imshow(h_pool_2[0, :, :, i])
-        plt.savefig('./figures/T2_pool2_feature_maps.png')
+        plt.savefig('/content/gdrive/My Drive/cz4042/figures/T2_pool2_feature_maps.png')
 
 
 if __name__ == '__main__':

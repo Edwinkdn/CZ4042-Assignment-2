@@ -1,6 +1,7 @@
 # Project 2, starter code Part a
 #
-
+ # from google.colab import drive
+# drive.mount('/content/gdrive')
 import math
 from functools import reduce
 
